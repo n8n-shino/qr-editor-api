@@ -8,6 +8,10 @@ app = Flask(__name__)
 def home():
     return "QR Editor API is running!"
 
+@app.route("/test")
+def test():
+    return "TEST OK"
+
 @app.route("/move-qr", methods=["POST"])
 def move_qr():
 

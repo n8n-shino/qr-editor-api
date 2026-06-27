@@ -1,5 +1,6 @@
 from flask import Flask, request, send_file
 from PIL import Image, ImageDraw
+import requests
 import io
 
 app = Flask(__name__)
@@ -8,41 +9,57 @@ app = Flask(__name__)
 def home():
     return "QR Editor API is running!"
 
-@app.route("/test")
-def test():
-    return "TEST OK"
-
 @app.route("/move-qr", methods=["POST"])
 def move_qr():
 
-    file = request.files["image"]
+    data = request.get_json()
 
-    img = Image.open(file).convert("RGB")
+    image_url = data["image_url"]
+
+    qr = data["qr_block"]
+
+    date = data["date_issued"]
+
+    # Download image from Cloudinary
+    response = requests.get(image_url)
+
+    response.raise_for_status()
+
+    img = Image.open(io.BytesIO(response.content)).convert("RGB")
 
     draw = ImageDraw.Draw(img)
 
-    left = int(request.form["left"])
-    top = int(request.form["top"])
-    right = int(request.form["right"])
-    bottom = int(request.form["bottom"])
+    # Crop QR block
+    qr_crop = img.crop((
+        qr["left"],
+        qr["top"],
+        qr["right"],
+        qr["bottom"]
+    ))
 
-    date_left = int(request.form["date_left"])
-    date_bottom = int(request.form["date_bottom"])
-
-    qr = img.crop((left, top, right, bottom))
-
+    # Remove original QR block
     draw.rectangle(
-        (left, top, right, bottom),
+        (
+            qr["left"],
+            qr["top"],
+            qr["right"],
+            qr["bottom"]
+        ),
         fill="white"
     )
 
+    # Position below Date Issued
     margin = 15
 
+    dest_x = date["left"]
+
+    dest_y = date["bottom"] + margin
+
     img.paste(
-        qr,
+        qr_crop,
         (
-            date_left,
-            date_bottom + margin
+            dest_x,
+            dest_y
         )
     )
 

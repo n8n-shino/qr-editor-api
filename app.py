@@ -1,6 +1,6 @@
 from flask import Flask, request, send_file
 from PIL import Image, ImageDraw
-import requests
+import json
 import io
 
 app = Flask(__name__)
@@ -12,20 +12,22 @@ def home():
 @app.route("/move-qr", methods=["POST"])
 def move_qr():
 
-    data = request.get_json()
+    # Read uploaded image
+    if "image" not in request.files:
+        return "Missing image", 400
 
-    image_url = data["image_url"]
+    file = request.files["image"]
+
+    img = Image.open(file).convert("RGB")
+
+    # Read coordinates JSON
+    if "coordinates" not in request.form:
+        return "Missing coordinates", 400
+
+    data = json.loads(request.form["coordinates"])
 
     qr = data["qr_block"]
-
     date = data["date_issued"]
-
-    # Download image from Cloudinary
-    response = requests.get(image_url)
-
-    response.raise_for_status()
-
-    img = Image.open(io.BytesIO(response.content)).convert("RGB")
 
     draw = ImageDraw.Draw(img)
 
@@ -48,11 +50,10 @@ def move_qr():
         fill="white"
     )
 
-    # Position below Date Issued
+    # Paste below Date Issued
     margin = 15
 
     dest_x = date["left"]
-
     dest_y = date["bottom"] + margin
 
     img.paste(

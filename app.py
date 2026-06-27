@@ -4,17 +4,21 @@ import io
 
 app = Flask(__name__)
 
+@app.route("/")
+def home():
+    return "QR Editor API is running!"
+
 @app.route("/move-qr", methods=["POST"])
 def move_qr():
+
+    if "image" not in request.files:
+        return "No image uploaded", 400
 
     file = request.files["image"]
 
     img = Image.open(file).convert("RGB")
 
-    #
-    # Temporary fixed coordinates
-    #
-
+    # Existing QR area
     crop_box = (
         1135,
         595,
@@ -26,15 +30,11 @@ def move_qr():
 
     draw = ImageDraw.Draw(img)
 
+    # Remove old QR
     draw.rectangle(crop_box, fill="white")
 
-    img.paste(
-        qr,
-        (
-            900,
-            180
-        )
-    )
+    # Paste below Date Issued
+    img.paste(qr, (900, 180))
 
     output = io.BytesIO()
 

@@ -15,30 +15,36 @@ def test():
 @app.route("/move-qr", methods=["POST"])
 def move_qr():
 
-    if "image" not in request.files:
-        return "No image uploaded", 400
-
     file = request.files["image"]
 
     img = Image.open(file).convert("RGB")
 
-    # Existing QR area
-    crop_box = (
-        1135,
-        595,
-        1291,
-        830
-    )
-
-    qr = img.crop(crop_box)
-
     draw = ImageDraw.Draw(img)
 
-    # Remove old QR
-    draw.rectangle(crop_box, fill="white")
+    left = int(request.form["left"])
+    top = int(request.form["top"])
+    right = int(request.form["right"])
+    bottom = int(request.form["bottom"])
 
-    # Paste below Date Issued
-    img.paste(qr, (900, 180))
+    date_left = int(request.form["date_left"])
+    date_bottom = int(request.form["date_bottom"])
+
+    qr = img.crop((left, top, right, bottom))
+
+    draw.rectangle(
+        (left, top, right, bottom),
+        fill="white"
+    )
+
+    margin = 15
+
+    img.paste(
+        qr,
+        (
+            date_left,
+            date_bottom + margin
+        )
+    )
 
     output = io.BytesIO()
 
